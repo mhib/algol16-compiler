@@ -1,5 +1,5 @@
 # Algol16 Compiler
-Toy Compiler written in Prolog for Algol16 made for Sextium III architecture
+Toy Algol16 Compiler written in Prolog made exclusively for Sextium III architecture
 
 ## Procedures support?
 Nope
