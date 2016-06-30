@@ -178,10 +178,10 @@ factor(Expr) -->
   pos_factor(Expr).
 pos_factor(Expr) -->
     (
-	['('], !, arith_expr(Expr), [')'];
-	[tokNumber(N)], !, { Expr = constant(N) };
+        ['('], !, arith_expr(Expr), [')'];
+        [tokNumber(N)], !, { Expr = constant(N) };
   procedure_call(Expr), ! ;
-	[tokVar(Var)], { Expr = variable(Var) }
+        [tokVar(Var)], { Expr = variable(Var) }
     ).
 
 
@@ -389,7 +389,7 @@ translateArithExpr(minus(X), S, D) -->
 translateArithExpr(constant(X), _, _) -->
   !, ["CONST", X].
 translateArithExpr(tokVar(X), _, Dict) -->
-  !, { member((variable(X), Addr), Dict), ! }, ["CONST", Addr, "SWAPA", "LOAD"].
+  !, translateArithExpr(variable(X), _, Dict).
 translateArithExpr(variable(X), _, Dict) -->
   !, { member((variable(X), Addr), Dict), ! }, ["CONST", Addr, "SWAPA", "LOAD"].
 translateArithExpr([+, L, R], S, Dict) -->
