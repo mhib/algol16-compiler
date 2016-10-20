@@ -1,7 +1,7 @@
 % SWI-Prolog version 6.6.4
 
 % Lexer
-tokens(Z) --> [40, 42], !, rest_of_comment, tokens(Y), { Z = Y }.
+tokens(Z) --> [40, 42], !, restOfComment, tokens(Y), { Z = Y }.
 % Assignment
 tokens(Z) --> ":=", !, tokens(Y), { Z = [:= | Y] }.
 
@@ -31,7 +31,7 @@ tokens(Z) --> "*", !,tokens(Y), { Z = [* | Y] }.
 tokens(Z) --> digit(D), number(D, N), !, tokens(Y), { R = tokNumber(N), Z = [R | Y] }.
 
 % Whitespaces
-tokens(Z) --> white_space(_), !, tokens(Y), { Z = Y }.
+tokens(Z) --> whiteSpace(_), !, tokens(Y), { Z = Y }.
 
 % Words & alphanums
 tokens(Z) --> letter(L), identifier(L, Id), !, tokens(Y), { member(Id, [program,
@@ -65,10 +65,10 @@ tokens(Z) --> [_], !, tokens(Y), { Z = [tokenUnknown | Y] }.
 tokens(Z) --> [], !, {Z = []}.
 
 
-rest_of_comment --> [42, 41], !.
-rest_of_comment --> [_], rest_of_comment.
+restOfComment --> [42, 41], !.
+restOfComment --> [_], restOfComment.
 
-white_space(S) --> [S], { code_type(S, space) }.
+whiteSpace(S) --> [S], { code_type(S, space) }.
 
 % Numbers stuff by TWI
 digit(D) -->
@@ -106,7 +106,7 @@ identifier(L, Id) -->
 program(Ast) -->
   [program], [tokVar(_)], body(Ast).
 body(Body) -->
-  declarations(D), [begin], compound_statement(M), [end], !, { Body = block(D, M) }.
+  declarations(D), [begin], compoundStatement(M), [end], !, { Body = block(D, M) }.
 
 empty([]) --> [].
 declarations(D) --> declaration(H), declarations(R), { D = [H | R] }, !;
@@ -123,108 +123,108 @@ variables(Vars) -->
   { Vars = [H] }).
 variable(V) --> [tokVar(Name)], { V = variable(Name) }.
 
-procedure_name(Pname) -->
-  [tokVar(Name)], { Pname = procedure_name(Name) }.
+procedureName(Pname) -->
+  [tokVar(Name)], { Pname = procedureName(Name) }.
 
 procedure(P) -->
-  [procedure], procedure_name(PName), ['('], formal_arguments(A), [')'], body(B), { P = procedure(PName, A, B) }.
+  [procedure], procedureName(PName), ['('], formalArguments(A), [')'], body(B), { P = procedure(PName, A, B) }.
 
-formal_arguments(A) -->
-  formal_argument(R), ([','], !, formal_arguments(As), { A = [R | As] } ;
+formalArguments(A) -->
+  formalArgument(R), ([','], !, formalArguments(As), { A = [R | As] } ;
   { A = [R] }).
-formal_arguments([]) --> [].
+formalArguments([]) --> [].
 
 
-formal_argument(A) -->
+formalArgument(A) -->
   variable(A), !;
   [tokNumber(N)], { A = value(N) }, !;
   [value], variable(V), { A = value(V) }.
 
-compound_statement(S) --> statement(T), ([;], !, compound_statement(R), { S = [T | R] };
+compoundStatement(S) --> statement(T), ([;], !, compoundStatement(R), { S = [T | R] };
     { S = [T] }).
 
-procedure_call(E) -->
-  procedure_name(PName), ['('], factualArguments(A), [')'], { E = procedure_call(PName, A) }.
+procedureCall(E) -->
+  procedureName(PName), ['('], factualArguments(A), [')'], { E = procedureCall(PName, A) }.
 
 statement(S) -->
-  [tokVar(V), :=], !, arith_expr(Expr), { S = assign(tokVar(V), Expr) } ;
-  [if], !, bool_expr(Bool), [then], compound_statement(IfBody), (
-    [else], !, compound_statement(ElseBody), [fi], { S = if(Bool, IfBody, ElseBody) };
+  [tokVar(V), :=], !, arithExpr(Expr), { S = assign(tokVar(V), Expr) } ;
+  [if], !, boolExpr(Bool), [then], compoundStatement(IfBody), (
+    [else], !, compoundStatement(ElseBody), [fi], { S = if(Bool, IfBody, ElseBody) };
     [fi], { S = if(Bool, IfBody) }
   );
-  [while], !, bool_expr(Bool), [do], compound_statement(Body), [done], { S = while(Bool, Body) };
-  [call], !, procedure_call(S);
-  [return], !, arith_expr(Expr), { S = return(Expr) };
+  [while], !, boolExpr(Bool), [do], compoundStatement(Body), [done], { S = while(Bool, Body) };
+  [call], !, procedureCall(S);
+  [return], !, arithExpr(Expr), { S = return(Expr) };
   [read], !, variable(V), { S = read(V) };
-  [write], !, arith_expr(Expr), { S = write(Expr) }.
+  [write], !, arithExpr(Expr), { S = write(Expr) }.
 
 factualArguments(A) -->
     factualArgument(H), ([','], !, factualArguments(R), { A = [H | R] } ;
     { A = [H] }, ! ) ;
     { A = [] }.
 factualArgument(A) -->
-    arith_expr(A).
+    arithExpr(A).
 
-arith_expr(Expr) --> summand(Summand), arith_expr(Summand, Expr).
-arith_expr(Acc, Expr) --> add_op(Op), !, summand(Summand), { Acc1 = [Op, Acc, Summand] }, arith_expr(Acc1, Expr).
-arith_expr(Acc, Acc) --> [].
+arithExpr(Expr) --> summand(Summand), arithExpr(Summand, Expr).
+arithExpr(Acc, Expr) --> addOp(Op), !, summand(Summand), { Acc1 = [Op, Acc, Summand] }, arithExpr(Acc1, Expr).
+arithExpr(Acc, Acc) --> [].
 
 summand(Expr) --> factor(Factor), summand(Factor, Expr).
-summand(Acc, Expr) --> mult_op(Op), !, factor(Factor), { Acc1 = [Op, Acc, Factor] }, summand(Acc1, Expr).
+summand(Acc, Expr) --> multOp(Op), !, factor(Factor), { Acc1 = [Op, Acc, Factor] }, summand(Acc1, Expr).
 summand(Acc, Acc) --> [].
 
 factor(Expr) -->
-  [-], pos_factor(Ex), { Expr = minus(Ex) }, !;
-  pos_factor(Expr).
-pos_factor(Expr) -->
+  [-], posFactor(Ex), { Expr = minus(Ex) }, !;
+  posFactor(Expr).
+posFactor(Expr) -->
     (
-        ['('], !, arith_expr(Expr), [')'];
+        ['('], !, arithExpr(Expr), [')'];
         [tokNumber(N)], !, { Expr = constant(N) };
-  procedure_call(Expr), ! ;
+  procedureCall(Expr), ! ;
         [tokVar(Var)], { Expr = variable(Var) }
     ).
 
 
-bool_expr(Bool) --> disjunct(Disjunct), bool_expr(Disjunct, Bool).
-bool_expr(Acc, Bool) --> [or], !, disjunct(Disjunct), { Acc1 = [or, Acc, Disjunct] }, bool_expr(Acc1, Bool).
-bool_expr(Acc, Acc) --> [].
+boolExpr(Bool) --> disjunct(Disjunct), boolExpr(Disjunct, Bool).
+boolExpr(Acc, Bool) --> [or], !, disjunct(Disjunct), { Acc1 = [or, Acc, Disjunct] }, boolExpr(Acc1, Bool).
+boolExpr(Acc, Acc) --> [].
 
 disjunct(Disjunct) --> conjunct(Conjunct), disjunct(Conjunct, Disjunct).
 disjunct(Acc, Disjunct) --> [and], !, conjunct(Conjunct), { Acc1 = [and, Acc, Conjunct] }, disjunct(Acc1, Disjunct).
 disjunct(Acc, Acc) --> [].
 
 conjunct(Conjunct) -->
-  [not], !, pos_conjunct(C), { Conjunct = not(C) } ;
-  pos_conjunct(Conjunct).
-pos_conjunct(Conjunct) -->
+  [not], !, posConjunct(C), { Conjunct = not(C) } ;
+  posConjunct(Conjunct).
+posConjunct(Conjunct) -->
     (
-    arith_expr(LExpr), !, rel_op(Op), arith_expr(RExpr), { Conjunct = [Op, LExpr, RExpr] };
-    ['('], !, bool_expr(Conjunct), [')']
+    arithExpr(LExpr), !, relOp(Op), arithExpr(RExpr), { Conjunct = [Op, LExpr, RExpr] };
+    ['('], !, boolExpr(Conjunct), [')']
    ).
 
-mult_op(*) -->
+multOp(*) -->
   [*], !.
-mult_op(div) -->
+multOp(div) -->
   [div], !.
-mult_op(mod) -->
+multOp(mod) -->
   [mod], !.
 
-add_op(+) -->
+addOp(+) -->
   [+], !.
-add_op(-) -->
+addOp(-) -->
   [-], !.
 
-rel_op(<=) -->
+relOp(<=) -->
   [<=], !.
-rel_op(>=) -->
+relOp(>=) -->
   [>=], !.
-rel_op(<) -->
+relOp(<) -->
   [<], !.
-rel_op(>) -->
+relOp(>) -->
   [>], !.
-rel_op(<>) -->
+relOp(<>) -->
   [<>], !.
-rel_op(=) -->
+relOp(=) -->
   [=].
 
 % End of Parser
@@ -233,9 +233,9 @@ parse(CharCodeList, Absynt) :-
     phrase(program(Absynt), TokList).
 
 % Konertowanie linii na liczbę
-to_decimal(line(_, [V]), V) :- integer(V), V >= 0, !.
-to_decimal(line(_, [V]), VI) :- integer(V), V < 0, !, VI is V + 65536.
-to_decimal(line(_, [A, B, C, D]), N) :-
+toDecimal(line(_, [V]), V) :- integer(V), V >= 0, !.
+toDecimal(line(_, [V]), VI) :- integer(V), V < 0, !, VI is V + 65536.
+toDecimal(line(_, [A, B, C, D]), N) :-
   command(A, AC),
   command(B, BC),
   command(C, CC),
@@ -259,16 +259,16 @@ command([68, 73, 86], 13).
 command([83, 72, 73, 70, 84], 14).
 command([78, 65, 78, 68], 15).
 
-add_to_dict([], Acc, C, Acc, C).
-add_to_dict([H | T], Acc, Counter, NAcc, NCounter) :-
+addToDict([], Acc, C, Acc, C).
+addToDict([H | T], Acc, Counter, NAcc, NCounter) :-
   Dcounter is Counter - 1,
-  add_to_dict(T, [(H, Counter) | Acc], Dcounter, NAcc, NCounter).
+  addToDict(T, [(H, Counter) | Acc], Dcounter, NAcc, NCounter).
 
 dict(Decs, Dict) :-
   dict(Decs, [], Dict, 65534), !.
 dict([], A, A, _) :- !.
 dict([local(Body) | T], Acc, Dict, Counter) :-
-  !, add_to_dict(Body, Acc, Counter, Nacc, NCounter),
+  !, addToDict(Body, Acc, Counter, Nacc, NCounter),
   dict(T, Nacc, Dict, NCounter).
 dict([_ | T], Acc, Dict, Counter) :-
   dict(T, Acc, Dict, Counter).
@@ -281,7 +281,7 @@ algol16(CharCodeList, Ret) :-
   StackB is LastInd - 1,
   phrase(instructions(Ins, StackB, Dict), Commands, ["CONST", 0, "SYSCALL"]),
   to_lines(Commands, Lines),
-  maplist(to_decimal, Lines, Ret).
+  maplist(toDecimal, Lines, Ret).
 
 take_n(L, C, L, []) :- length(L, O), O < C, !.
 take_n(R, 0, [], R) :- !.
@@ -356,10 +356,10 @@ instructions([], _, _) --> [].
 instructions([read(V) | T], S, Dict) -->
   !, {member((V, Addr), Dict)}, !,
   ["CONST", Addr, "SWAPA", "CONST", 1, "SYSCALL", "STORE"], instructions(T, S, Dict).
-instructions([write(Arith_Expr) | T], S, Dict) -->
-  !, translateArithExpr(Arith_Expr, S, Dict), ["SWAPD", "CONST", 2, "SYSCALL"], instructions(T, S, Dict).
-instructions([assign(tokVar(Name), Arith_Expr) | T], S, Dict) -->
-  !, translateArithExpr(Arith_Expr, S, Dict), { member((variable(Name), Addr), Dict), ! },
+instructions([write(arithExpr) | T], S, Dict) -->
+  !, translateArithExpr(arithExpr, S, Dict), ["SWAPD", "CONST", 2, "SYSCALL"], instructions(T, S, Dict).
+instructions([assign(tokVar(Name), arithExpr) | T], S, Dict) -->
+  !, translateArithExpr(arithExpr, S, Dict), { member((variable(Name), Addr), Dict), ! },
   ["SWAPA", "CONST", Addr, "SWAPA", "STORE"], instructions(T, S, Dict).
 instructions([if(BoolExpr, Body) | T], S, Dict) -->
   !, translateBoolExpr(BoolExpr, S, Dict), ["SWAPA", "CONST", No, "SWAPA", "BRANCHZ"],
@@ -413,7 +413,6 @@ translateComplexArithExpr(L, R, S, Dict) -->
   { S1 is S - 1 },
   translateArithExpr(R, S1, Dict), ["SWAPD"], % R do argumentu
   ["CONST", S, "SWAPA", "LOAD"]. % L do Acc
-
 
 
 translateBoolExpr([=, L, R], S, Dict) -->
