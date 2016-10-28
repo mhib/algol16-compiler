@@ -242,22 +242,22 @@ toDecimal(line(_, [A, B, C, D]), N) :-
   command(D, DC), !,
   N is DC + CC * 16 + BC * 256 + AC * 4096.
 
-command([78, 79, 80], 0).
-command([83, 89, 83, 67, 65, 76, 76], 1).
-command([76, 79, 65, 68], 2).
-command([83, 84, 79, 82, 69], 3).
-command([83, 87, 65, 80, 65], 4).
-command([83, 87, 65, 80, 68], 5).
-command([66, 82, 65, 78, 67, 72, 90], 6).
-command([66, 82, 65, 78, 67, 72, 78], 7).
-command([74, 85, 77, 80], 8).
-command([67, 79, 78, 83, 84], 9).
-command([65, 68, 68], 10).
-command([83, 85, 66], 11).
-command([77, 85, 76], 12).
-command([68, 73, 86], 13).
-command([83, 72, 73, 70, 84], 14).
-command([78, 65, 78, 68], 15).
+command(nop, 0).
+command(syscall, 1).
+command(load, 2).
+command(store, 3).
+command(swapa, 4).
+command(swapd, 5).
+command(branchz, 6).
+command(branchn, 7).
+command(jump, 8).
+command(const, 9).
+command(add, 10).
+command(sub, 11).
+command(mul, 12).
+command(div, 13).
+command(shift, 14).
+command(nand, 15).
 
 add_to_dict([], Acc, C, Acc, C).
 add_to_dict([H | T], Acc, Counter, NAcc, NCounter) :-
@@ -279,7 +279,7 @@ algol16(CharCodeList, Ret) :-
   dict(Decls, Dict),
   (Dict = [(_, LastInd) | _], ! ; LastInd = 65534, !),
   StackB is LastInd - 1,
-  phrase(instructions(Ins, StackB, Dict), Commands, ["CONST", 0, "SYSCALL"]),
+  phrase(instructions(Ins, StackB, Dict), Commands, [const, 0, syscall]),
   to_lines(Commands, Lines),
   maplist(toDecimal, Lines, Ret).
 
@@ -316,7 +316,7 @@ to_lines(Commands, Ret) :-
 to_lines([], _ - [], [], [], _) :- !.
 to_lines([], Ret - End, AccC, AccI, C) :-
   !, length(AccC, I),
-  (I > 0 -> new_list([78,79,80], 4 - I, O),
+  (I > 0 -> new_list(nop, 4 - I, O),
   append(AccC, O, NO),
   T = [line(C, NO) | Nend],
   End = T,
@@ -328,9 +328,9 @@ to_lines([H | T], Ret - E, AccC, AccI, C) :-
   (AccC = [] -> !, E = [line(C, [H]) | X], C1 is C + 1, to_lines(T, Ret - X, AccC, AccI, C1);
   (append(AccI, [H], NAccI),
     to_lines(T, Ret - E, AccC, NAccI, C))).
-to_lines(["JUMP" | T], Ret - End, AccC, AccI, C) :-
-  !, append(AccC, ["JUMP"], NAccC), length(NAccC, I),
-  new_list([78,79,80], 4 - I, O),
+to_lines([jump | T], Ret - End, AccC, AccI, C) :-
+  !, append(AccC, [jump], NAccC), length(NAccC, I),
+  new_list(nop, 4 - I, O),
   append(NAccC, O, NO),
   End = [line(C, NO) | Nend],
   C1 is C + 1,
@@ -338,7 +338,7 @@ to_lines(["JUMP" | T], Ret - End, AccC, AccI, C) :-
   to_lines(T, Ret - NNend, [], [], H).
 to_lines([marker(H) | T], Ret - End, AccC, AccI, C) :-
   !, length(AccC, I),
-  (I > 0 -> new_list([78,79,80], 4 - I, O),
+  (I > 0 -> new_list(nop, 4 - I, O),
   append(AccC, O, NO),
   End = [line(C, NO) | Nend],
   C1 is C + 1; C1 = C, Nend = End),
@@ -346,7 +346,7 @@ to_lines([marker(H) | T], Ret - End, AccC, AccI, C) :-
   to_lines(T, Ret - NNend, [], [], H).
 to_lines([H | T], Ret - End, AccC, AccI, C) :-
   !, append(AccC, [H], NAccC),
-  (length(NAccC, 4) -> !, End = [line(C, NAccC) | Nend], count([67, 79, 78, 83, 84], NAccC, O), !, C1 is C + 1,
+  (length(NAccC, 4) -> !, End = [line(C, NAccC) | Nend], count(const, NAccC, O), !, C1 is C + 1,
     take_n(AccI, O, LAccI, NAccI), !, add_integers(LAccI, Ret - Nend, Ret - NNend, C1, NC1),
     to_lines(T, Ret - NNend, [], NAccI, NC1) ;
     to_lines(T, Ret - End, NAccC, AccI, C)).
@@ -355,86 +355,86 @@ to_lines([H | T], Ret - End, AccC, AccI, C) :-
 instructions([], _, _) --> [].
 instructions([read(V) | T], S, Dict) -->
   !, {member((V, Addr), Dict)}, !,
-  ["CONST", Addr, "SWAPA", "CONST", 1, "SYSCALL", "STORE"], instructions(T, S, Dict).
+  [const, Addr, swapa, const, 1, syscall, store], instructions(T, S, Dict).
 instructions([write(Arith_Expr) | T], S, Dict) -->
-  !, translateArithExpr(Arith_Expr, S, Dict), ["SWAPD", "CONST", 2, "SYSCALL"], instructions(T, S, Dict).
+  !, translateArithExpr(Arith_Expr, S, Dict), [swapd, const, 2, syscall], instructions(T, S, Dict).
 instructions([assign(tokVar(Name), Arith_Expr) | T], S, Dict) -->
   !, translateArithExpr(Arith_Expr, S, Dict), { member((variable(Name), Addr), Dict), ! },
-  ["SWAPA", "CONST", Addr, "SWAPA", "STORE"], instructions(T, S, Dict).
+  [swapa, const, Addr, swapa, store], instructions(T, S, Dict).
 instructions([if(BoolExpr, Body) | T], S, Dict) -->
-  !, translateBoolExpr(BoolExpr, S, Dict), ["SWAPA", "CONST", No, "SWAPA", "BRANCHZ"],
+  !, translateBoolExpr(BoolExpr, S, Dict), [swapa, const, No, swapa, branchz],
   instructions(Body, S, Dict),
   [marker(No)],
   instructions(T, S, Dict).
 instructions([if(BoolExpr, TrueBody, FalseBody) | T], S, Dict) -->
-  !, translateBoolExpr(BoolExpr, S, Dict), ["SWAPA", "CONST", No, "SWAPA", "BRANCHZ"],
+  !, translateBoolExpr(BoolExpr, S, Dict), [swapa, const, No, swapa, branchz],
   instructions(TrueBody, S, Dict),
-  ["CONST", True, "JUMP"],
+  [const, True, jump],
   [marker(No)],
   instructions(FalseBody, S, Dict),
   [marker(True)],
   instructions(T, S, Dict).
 instructions([while(BoolExpr, Body) | T], S, Dict) -->
   [marker(Bool)],
-  translateBoolExpr(BoolExpr, S, Dict), ["SWAPA", "CONST", End, "SWAPA", "BRANCHZ"],
+  translateBoolExpr(BoolExpr, S, Dict), [swapa, const, End, swapa, branchz],
   instructions(Body, S, Dict),
-  ["CONST", Bool, "JUMP"], % Skocz do warunku
+  [const, Bool, jump], % Skocz do warunku
   [marker(End)], % Zakończ pętle
   instructions(T, S, Dict).
 
 translateArithExpr(minus(constant(X)), _, _) -->
-  !, {NegX is -X}, ["CONST", NegX].
+  !, {NegX is -X}, [const, NegX].
 translateArithExpr(minus(X), S, D) -->
-  !, translateArithExpr(X, S, D), ["SWAPD", "CONST", -1, "MUL"].
+  !, translateArithExpr(X, S, D), [swapd, const, -1, mul].
 translateArithExpr(constant(X), _, _) -->
-  !, ["CONST", X].
+  !, [const, X].
 translateArithExpr(tokVar(X), _, Dict) -->
   !, translateArithExpr(variable(X), _, Dict).
 translateArithExpr(variable(X), _, Dict) -->
-  !, { member((variable(X), Addr), Dict), ! }, ["CONST", Addr, "SWAPA", "LOAD"].
+  !, { member((variable(X), Addr), Dict), ! }, [const, Addr, swapa, load].
 translateArithExpr([+, L, R], S, Dict) -->
   !, translateComplexArithExpr(L, R, S, Dict),
-  ["ADD"].
+  [add].
 translateArithExpr([-, L, R], S, Dict) -->
   !, translateComplexArithExpr(L, R, S, Dict),
-  ["SUB"].
+  [sub].
 translateArithExpr([*, L, R], S, Dict) -->
   !, translateComplexArithExpr(L, R, S, Dict),
-  ["MUL"].
+  [mul].
 translateArithExpr(['div', L, R], S, Dict) -->
   !, translateComplexArithExpr(L, R, S, Dict),
-  ["DIV"].
+  [div].
 translateArithExpr(['mod', L, R], S, Dict) -->
   !, translateComplexArithExpr(L, R, S, Dict),
-  ["DIV", "SWAPD", "CONST", -16, "SWAPD", "SHIFT"].
+  [div, swapd, const, -16, swapd, shift].
 
 translateComplexArithExpr(L, R, S, Dict) -->
-  !, translateArithExpr(L, S, Dict), ["SWAPA", "CONST", S, "SWAPA", "STORE"], % L na stos
+  !, translateArithExpr(L, S, Dict), [swapa, const, S, swapa, store], % L na stos
   { S1 is S - 1 },
-  translateArithExpr(R, S1, Dict), ["SWAPD"], % R do argumentu
-  ["CONST", S, "SWAPA", "LOAD"]. % L do Acc
+  translateArithExpr(R, S1, Dict), [swapd], % R do argumentu
+  [const, S, swapa, load]. % L do Acc
 
 
 translateBoolExpr([=, L, R], S, Dict) -->
   !, translateBoolExpr(not([<>, L, R]), S, Dict).
 translateBoolExpr([<>, L, R], S, Dict) -->
   !, translateArithExpr([-, L, R], S, Dict),
-  ["SWAPA", "CONST", Jump0, "SWAPA", "BRANCHZ", "CONST", 1, marker(Jump0)].
+  [swapa, const, Jump0, swapa, branchz, const, 1, marker(Jump0)].
 translateBoolExpr([<, L, R], S, Dict) -->
   !, translateArithExpr(L, S, Dict),
-  ["SWAPA", "CONST", S, "SWAPA", "STORE"],
+  [swapa, const, S, swapa, store],
   { SD is S - 1 },
   translateArithExpr(R, SD, Dict),
-  ["SWAPA", "CONST", SD, "SWAPA", "STORE"],
-  ["SWAPA", "CONST", RNeg, "SWAPA", "BRANCHN"],
-  ["CONST", S, "SWAPA", "LOAD", "SWAPA", "CONST", LNeg, "SWAPA", "BRANCHN"],
-  ["CONST", Both, "JUMP"], % Obie nieujemne
-  [marker(LNeg), "CONST", 1, "SWAPA", "CONST", End, "JUMP"], % Lewa ujemna
-  [marker(RNeg), "CONST", S, "SWAPA", "LOAD", "SWAPA", "CONST", Both, "SWAPA", "BRANCHN"],
-  ["CONST", 0, "SWAPA", "CONST", End, "JUMP"], % Prawa ujemna
-  [marker(Both), "CONST", SD, "SWAPA", "LOAD", "SWAPD", "CONST", S, "SWAPA", "LOAD", "SUB"],
-  ["SWAPA", "CONST", Jump0, "SWAPA", "BRANCHN", "CONST", 0, "SWAPA", "CONST", Jump1, "JUMP", marker(Jump0), "CONST", 1, "SWAPA", marker(Jump1)],
-  [marker(End), "SWAPA"].
+  [swapa, const, SD, swapa, store],
+  [swapa, const, RNeg, swapa, branchn],
+  [const, S, swapa, load, swapa, const, LNeg, swapa, branchn],
+  [const, Both, jump], % Obie nieujemne
+  [marker(LNeg), const, 1, swapa, const, End, jump], % Lewa ujemna
+  [marker(RNeg), const, S, swapa, load, swapa, const, Both, swapa, branchn],
+  [const, 0, swapa, const, End, jump], % Prawa ujemna
+  [marker(Both), const, SD, swapa, load, swapd, const, S, swapa, load, sub],
+  [swapa, const, Jump0, swapa, branchn, const, 0, swapa, const, Jump1, jump, marker(Jump0), const, 1, swapa, marker(Jump1)],
+  [marker(End), swapa].
 translateBoolExpr([>, L, R], S, Dict) -->
   !, translateBoolExpr([<, R, L], S, Dict).
 translateBoolExpr([>=, L, R], S, Dict) -->
@@ -443,17 +443,17 @@ translateBoolExpr([<=, L, R], S, Dict) -->
   !, translateBoolExpr([>=, R, L], S, Dict).
 
 translateBoolExpr(([and, L, R]), S, Dict) -->
-  !, complexBoolExpr(L, R, S, Dict), ["MUL"].
+  !, complexBoolExpr(L, R, S, Dict), [mul].
 translateBoolExpr(([or, L, R]), S, Dict) -->
-  !, complexBoolExpr(L, R, S, Dict), ["ADD", "SWAPD", "CONST", 1, "ADD", "SWAPD", "CONST", 2, "SWAPD", "DIV"].
+  !, complexBoolExpr(L, R, S, Dict), [add, swapd, const, 1, add, swapd, const, 2, swapd, div].
 translateBoolExpr(not(L), S, Dict) -->
   !, translateBoolExpr(L, S, Dict),
-  ["SWAPD", "CONST", 1, "SUB"].
+  [swapd, const, 1, sub].
 
 complexBoolExpr(L, R, S, Dict) -->
   !, translateBoolExpr(L, S, Dict),
-  ["SWAPA", "CONST", S, "SWAPA", "STORE"], % L na stos
+  [swapa, const, S, swapa, store], % L na stos
   { S1 is S - 1 },
   translateBoolExpr(R, S1, Dict),
-  ["SWAPD"],
-  ["CONST", S, "SWAPA", "LOAD"].
+  [swapd],
+  [const, S, swapa, load].
