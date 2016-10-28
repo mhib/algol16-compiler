@@ -280,14 +280,14 @@ algol16(CharCodeList, Ret) :-
   (Dict = [(_, LastInd) | _], ! ; LastInd = 65534, !),
   StackB is LastInd - 1,
   phrase(instructions(Ins, StackB, Dict), Commands, [const, 0, syscall]),
-  to_lines(Commands, Lines),
+  toLines(Commands, Lines),
   maplist(toDecimal, Lines, Ret).
 
-take_n(L, C, L, []) :- length(L, O), O < C, !.
-take_n(R, 0, [], R) :- !.
-take_n([H | T1], C, [H | T2], R) :-
+takeN(R, 0, [], R) :- !.
+takeN([], _, [], []).
+takeN([H | T1], C, [H | T2], R) :-
   DC is C - 1,
-  take_n(T1, DC, T2, R).
+  takeN(T1, DC, T2, R).
 
 count(X, L, N) :-
   count(L, X, 0, N), !.
@@ -299,57 +299,57 @@ count([H | T], E, C, N) :-
 count([_ | T], E, C, N) :-
   count(T, E, C, N).
 
-add_integers([], Ret, Ret, NC, NC) :- !.
-add_integers([H | T], Ret - Nend, Ret - NNend, C, NC) :-
+addLineNumber([], Ret, Ret, NC, NC) :- !.
+addLineNumber([H | T], Ret - Nend, Ret - NNend, C, NC) :-
   Line = line(C, [H]),
   Nend = [Line | X],
   C1 is C + 1,
-  !, add_integers(T, Ret - X, Ret - NNend, C1, NC).
+  !, addLineNumber(T, Ret - X, Ret - NNend, C1, NC).
 
-new_list(_, N, []) :- 0 is N, !.
-new_list(E, C, [E | T]) :-
+newList(_, N, []) :- 0 is N, !.
+newList(E, C, [E | T]) :-
   DC is C - 1,
-  !, new_list(E, DC, T).
+  !, newList(E, DC, T).
 
-to_lines(Commands, Ret) :-
-  to_lines(Commands, Ret - Ret, [], [], 0), !.
-to_lines([], _ - [], [], [], _) :- !.
-to_lines([], Ret - End, AccC, AccI, C) :-
+toLines(Commands, Ret) :-
+  toLines(Commands, Ret - Ret, [], [], 0), !.
+toLines([], _ - [], [], [], _) :- !.
+toLines([], Ret - End, AccC, AccI, C) :-
   !, length(AccC, I),
-  (I > 0 -> new_list(nop, 4 - I, O),
+  (I > 0 -> newList(nop, 4 - I, O),
   append(AccC, O, NO),
   T = [line(C, NO) | Nend],
   End = T,
   C1 is C + 1; C1 = C, Nend = End),
-  !, add_integers(AccI, Ret - Nend, Ret - NNend, C1, _),
-  to_lines([], Ret - NNend, [], [], C1).
-to_lines([H | T], Ret - E, AccC, AccI, C) :-
+  !, addLineNumber(AccI, Ret - Nend, Ret - NNend, C1, _),
+  toLines([], Ret - NNend, [], [], C1).
+toLines([H | T], Ret - E, AccC, AccI, C) :-
   (integer(H) ; var(H)), !,
-  (AccC = [] -> !, E = [line(C, [H]) | X], C1 is C + 1, to_lines(T, Ret - X, AccC, AccI, C1);
+  (AccC = [] -> !, E = [line(C, [H]) | X], C1 is C + 1, toLines(T, Ret - X, AccC, AccI, C1);
   (append(AccI, [H], NAccI),
-    to_lines(T, Ret - E, AccC, NAccI, C))).
-to_lines([jump | T], Ret - End, AccC, AccI, C) :-
+    toLines(T, Ret - E, AccC, NAccI, C))).
+toLines([jump | T], Ret - End, AccC, AccI, C) :-
   !, append(AccC, [jump], NAccC), length(NAccC, I),
-  new_list(nop, 4 - I, O),
+  newList(nop, 4 - I, O),
   append(NAccC, O, NO),
   End = [line(C, NO) | Nend],
   C1 is C + 1,
-  add_integers(AccI, Ret - Nend, Ret - NNend, C1, H),
-  to_lines(T, Ret - NNend, [], [], H).
-to_lines([marker(H) | T], Ret - End, AccC, AccI, C) :-
+  addLineNumber(AccI, Ret - Nend, Ret - NNend, C1, H),
+  toLines(T, Ret - NNend, [], [], H).
+toLines([marker(H) | T], Ret - End, AccC, AccI, C) :-
   !, length(AccC, I),
-  (I > 0 -> new_list(nop, 4 - I, O),
+  (I > 0 -> newList(nop, 4 - I, O),
   append(AccC, O, NO),
   End = [line(C, NO) | Nend],
   C1 is C + 1; C1 = C, Nend = End),
-  add_integers(AccI, Ret - Nend, Ret - NNend, C1, H),
-  to_lines(T, Ret - NNend, [], [], H).
-to_lines([H | T], Ret - End, AccC, AccI, C) :-
+  addLineNumber(AccI, Ret - Nend, Ret - NNend, C1, H),
+  toLines(T, Ret - NNend, [], [], H).
+toLines([H | T], Ret - End, AccC, AccI, C) :-
   !, append(AccC, [H], NAccC),
   (length(NAccC, 4) -> !, End = [line(C, NAccC) | Nend], count(const, NAccC, O), !, C1 is C + 1,
-    take_n(AccI, O, LAccI, NAccI), !, add_integers(LAccI, Ret - Nend, Ret - NNend, C1, NC1),
-    to_lines(T, Ret - NNend, [], NAccI, NC1) ;
-    to_lines(T, Ret - End, NAccC, AccI, C)).
+    takeN(AccI, O, LAccI, NAccI), !, addLineNumber(LAccI, Ret - Nend, Ret - NNend, C1, NC1),
+    toLines(T, Ret - NNend, [], NAccI, NC1) ;
+    toLines(T, Ret - End, NAccC, AccI, C)).
 
 
 instructions([], _, _) --> [].
