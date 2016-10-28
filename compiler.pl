@@ -194,9 +194,9 @@ disjunct(Acc, Disjunct) --> [and], !, conjunct(Conjunct), { Acc1 = [and, Acc, Co
 disjunct(Acc, Acc) --> [].
 
 conjunct(Conjunct) -->
-  [not], !, posConjunct(C), { Conjunct = not(C) } ;
-  posConjunct(Conjunct).
-posConjunct(Conjunct) -->
+  [not], !, posConjuct(C), { Conjunct = not(C) } ;
+  posConjuct(Conjunct).
+posConjuct(Conjunct) -->
     (
     arithExpr(LExpr), !, relOp(Op), arithExpr(RExpr), { Conjunct = [Op, LExpr, RExpr] };
     ['('], !, boolExpr(Conjunct), [')']
@@ -259,16 +259,16 @@ command([68, 73, 86], 13).
 command([83, 72, 73, 70, 84], 14).
 command([78, 65, 78, 68], 15).
 
-addToDict([], Acc, C, Acc, C).
-addToDict([H | T], Acc, Counter, NAcc, NCounter) :-
+add_to_dict([], Acc, C, Acc, C).
+add_to_dict([H | T], Acc, Counter, NAcc, NCounter) :-
   Dcounter is Counter - 1,
-  addToDict(T, [(H, Counter) | Acc], Dcounter, NAcc, NCounter).
+  add_to_dict(T, [(H, Counter) | Acc], Dcounter, NAcc, NCounter).
 
 dict(Decs, Dict) :-
   dict(Decs, [], Dict, 65534), !.
 dict([], A, A, _) :- !.
 dict([local(Body) | T], Acc, Dict, Counter) :-
-  !, addToDict(Body, Acc, Counter, Nacc, NCounter),
+  !, add_to_dict(Body, Acc, Counter, Nacc, NCounter),
   dict(T, Nacc, Dict, NCounter).
 dict([_ | T], Acc, Dict, Counter) :-
   dict(T, Acc, Dict, Counter).
@@ -356,10 +356,10 @@ instructions([], _, _) --> [].
 instructions([read(V) | T], S, Dict) -->
   !, {member((V, Addr), Dict)}, !,
   ["CONST", Addr, "SWAPA", "CONST", 1, "SYSCALL", "STORE"], instructions(T, S, Dict).
-instructions([write(arithExpr) | T], S, Dict) -->
-  !, translateArithExpr(arithExpr, S, Dict), ["SWAPD", "CONST", 2, "SYSCALL"], instructions(T, S, Dict).
-instructions([assign(tokVar(Name), arithExpr) | T], S, Dict) -->
-  !, translateArithExpr(arithExpr, S, Dict), { member((variable(Name), Addr), Dict), ! },
+instructions([write(Arith_Expr) | T], S, Dict) -->
+  !, translateArithExpr(Arith_Expr, S, Dict), ["SWAPD", "CONST", 2, "SYSCALL"], instructions(T, S, Dict).
+instructions([assign(tokVar(Name), Arith_Expr) | T], S, Dict) -->
+  !, translateArithExpr(Arith_Expr, S, Dict), { member((variable(Name), Addr), Dict), ! },
   ["SWAPA", "CONST", Addr, "SWAPA", "STORE"], instructions(T, S, Dict).
 instructions([if(BoolExpr, Body) | T], S, Dict) -->
   !, translateBoolExpr(BoolExpr, S, Dict), ["SWAPA", "CONST", No, "SWAPA", "BRANCHZ"],
