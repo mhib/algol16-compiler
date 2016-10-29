@@ -443,17 +443,19 @@ translateBoolExpr([<=, L, R], S, Dict) -->
   !, translateBoolExpr([>=, R, L], S, Dict).
 
 translateBoolExpr(([and, L, R]), S, Dict) -->
-  !, complexBoolExpr(L, R, S, Dict), [mul].
+  !,
+  translateBoolExpr(L, S, Dict),
+  [swapa, const, End, swapa, branchz, swapa],
+  translateBoolExpr(R, S, Dict),
+  [marker(End)].
 translateBoolExpr(([or, L, R]), S, Dict) -->
-  !, complexBoolExpr(L, R, S, Dict), [add, swapd, const, 1, add, swapd, const, 2, swapd, div].
+  !,
+  translateBoolExpr(L, S, Dict),
+  [swapd, const, -1, mul, swapa, const, True, swapa, branchn],
+  translateBoolExpr(R, S, Dict),
+  [swapa, const, End, jump],
+  [marker(True), const, 1, swapa],
+  [marker(End), swapa].
 translateBoolExpr(not(L), S, Dict) -->
   !, translateBoolExpr(L, S, Dict),
   [swapd, const, 1, sub].
-
-complexBoolExpr(L, R, S, Dict) -->
-  !, translateBoolExpr(L, S, Dict),
-  [swapa, const, S, swapa, store], % L na stos
-  { S1 is S - 1 },
-  translateBoolExpr(R, S1, Dict),
-  [swapd],
-  [const, S, swapa, load].
