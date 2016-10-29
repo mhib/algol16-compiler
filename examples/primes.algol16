@@ -1,4 +1,4 @@
-"program primes
+program Primes
   local count, i, t, y, end_inner
 begin
   read count;
@@ -21,4 +21,4 @@ begin
     fi;
     i := i + 1
   done
-end".
+end
