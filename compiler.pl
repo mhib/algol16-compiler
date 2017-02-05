@@ -90,7 +90,7 @@ letter(L) -->
    [L], { code_type(L, alpha) }.
 
 alphanum([A|T]) -->
-   [A] ,{ A = 39 }, !, alphanum(T).
+   [A], { A = 39 }, !, alphanum(T).
 alphanum([A|T]) -->
    [A], { A = 95 }, !, alphanum(T).
 alphanum([A|T]) -->
