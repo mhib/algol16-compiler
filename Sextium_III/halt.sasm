@@ -1,0 +1,3 @@
+; program natychmiast kończy działanie
+0000: CONST SYSCALL NOP NOP
+0001: 0000

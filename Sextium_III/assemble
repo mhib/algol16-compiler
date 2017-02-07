@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# "Assembler" for the Sextium® III processor
+
+if [ "$#" -lt 1 -o "$#" -gt 2 ]
+then
+   echo "Wrong number of parameters" > /dev/stderr
+   echo "Usage: $(basename $0) input [output]" > /dev/stderr
+   exit 1
+fi
+
+INFILE="$1"
+OUTFILE="${2:-$(basename $1 .sasm).sextium}"
+
+echo "Writing binary output to $OUTFILE. Hexdump follows." > /dev/stderr
+
+sed 's/;.*$//;
+     s/^[ \t0-9a-fA-F]*://;
+     s/NOP/0/g;
+     s/SYSCALL/1/g;
+     s/LOAD/2/g;
+     s/STORE/3/g;
+     s/SWAPA/4/g;
+     s/SWAPD/5/g;
+     s/BRANCHZ/6/g;
+     s/BRANCHN/7/g;
+     s/JUMP/8/g;
+     s/CONST/9/g;
+     s/ADD/a/g;
+     s/SUB/b/g;
+     s/MUL/c/g;
+     s/DIV/d/g;
+     s/SHIFT/e/g;
+     s/NAND/f/g;
+     s/[ \t]//g;
+     /^$/d' "$INFILE" | tee /dev/stderr | xxd -p -r > "$OUTFILE"
+
+# twi 2016/04/10 vim:fenc=utf8:ft=sh:ts=3:cc=73,74,75,76,77,78,79,80:

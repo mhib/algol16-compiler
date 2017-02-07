@@ -283,6 +283,13 @@ algol16(CharCodeList, Ret) :-
   toLines(Commands, Lines),
   maplist(toDecimal, Lines, Ret).
 
+compileToFile(CharCodeList, File) :-
+  algol16(CharCodeList, Output),
+  open(File, write, Stream),
+  write(Stream, Output),
+  nl(Stream),
+  close(Stream).
+
 takeN(R, 0, [], R) :- !.
 takeN([], _, [], []).
 takeN([H | T1], C, [H | T2], R) :-

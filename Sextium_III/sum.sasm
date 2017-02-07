@@ -1,0 +1,12 @@
+; Program sumuje wczytywane liczby aż napotka liczbę 0. Wówczas
+; wypisuje obliczoną sumę i kończy działanie.
+;
+0000: CONST SWAPA CONST SYSCALL     ; read(ACC)
+0001: 0006                          ;    adres skoku, gdy wczytano 0
+0002: 0001                          ;    kod syscall READ
+0003: BRANCHZ ADD SWAPD CONST       ; if (ACC=0) goto 0006
+0004: 0000                          ;    adres skoku bezwarunkowego
+0005: JUMP NOP NOP NOP              ; goto 0000
+0006: CONST SYSCALL CONST SYSCALL   ; write(ACC); halt();
+0007: 0002                          ;    kod syscall WRITE
+0008: 0000                          ;    kod syscall HALT

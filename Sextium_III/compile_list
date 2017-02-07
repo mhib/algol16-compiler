@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+string = IO.read('prog.txt').chomp
+string.tr!('[', '')
+string.tr!(']', '')
+
+File.open("output.txt", 'w') do |f|
+  string.split(",").each do |x|
+    f.write "#{x}\n"
+  end
+end
+
+system('./translator')
+system('./sextium prog.sextium')

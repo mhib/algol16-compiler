@@ -1,0 +1,14 @@
+Kompilacja:
+   make all clean
+
+Uruchomienie przykładowych programów:
+
+./sextium halt.sextium
+   Program natychmiast kończy działanie.
+
+./sextium sum.sextium
+   Program sumuje liczby podawane z konsoli aż do napotkania liczby 0.
+   Wówczas wypisuje sumę i kończy działanie.
+
+./sextium gcd.sextium
+   Program oblicza największy wspólny podzielnik dwóch podanych liczb.

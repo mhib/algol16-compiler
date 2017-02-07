@@ -1,0 +1,46 @@
+; Program wczytuje dwie liczby i wypisuje ich największy wspólny
+; podzielnik używając następującej wersji algorytmu Euklidesa:
+;
+;     read(x);
+;     read(y);
+;     while(y != 0) {
+;        tmp = x % y;
+;        y = x;
+;        x = tmp;
+;     }
+;     write(y);
+;
+; Uwaga: ze względu na zaokrąglanie w kierunku zera wynik jest
+; matematycznie poprawny jedynie dla liczb nieujemnych.
+;
+0000: CONST SWAPA CONST SYSCALL   ; read(x)
+0001: 001a                        ;    adres x
+0002: 0001                        ;    kod syscall READ
+0003: STORE CONST SWAPA CONST     ; read(y)
+0004: 001b                        ;    adres y
+0005: 0001                        ;    kod syscall READ
+0006: SYSCALL STORE SWAPD NOP     ; DR := y
+                                  ; etykieta dalej = 0007
+0007: CONST SWAPA SWAPD BRANCHZ   ; if y=0 goto koniec
+0008: 0015                        ;    adres etykiety koniec
+0009: SWAPD CONST SWAPA LOAD      ; ACC := x
+000a: 001a                        ;    adres x
+000b: DIV CONST SWAPD SHIFT       ; ACC := x mod y
+000c: fff0                        ;    stała -16
+000d: SWAPD CONST SWAPA LOAD      ; DR := y
+000e: 001b                        ;    adres y
+000f: SWAPD STORE CONST SWAPA     ; y := ACC; x := DR
+0010: 001a                        ;    adres x
+0011: SWAPD STORE CONST SWAPA     ; DR := y
+0012: 001b                        ;    adres y
+0013: LOAD SWAPD CONST JUMP       ; goto dalej
+0014: 0007                        ;   adres etykiety dalej
+                                  ; etykieta koniec = 0015
+0015: CONST SWAPA LOAD SWAPD      ; DR := x
+0016: 001a                        ;    adres x
+0017: CONST SYSCALL CONST SYSCALL ; write(x); halt()
+0018: 0002                        ;    kod syscall WRITE
+0019: 0000                        ;    kod syscall HALT
+                                  ; Sekcja danych:
+001a:                             ; zmienna x
+001b:                             ; zmienna y

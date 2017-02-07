@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+require 'fileutils'
+
+PROLOG_OUTPUT = 'prog.txt'
+COMMAND = 'swipl'
+FLAGS = '--traditional -f ../compiler.pl -g true'
+BODY = ARGV[0]
+system(%[#{COMMAND} #{FLAGS} -t 'compileToFile("#{BODY}", "#{PROLOG_OUTPUT}")' 2> /dev/null])
+# puts %[#{COMMAND} #{FLAGS} -t 'compileToFile("#{BODY}", "#{PROLOG_OUTPUT}")']
+
+string = IO.read(PROLOG_OUTPUT).chomp
+string.tr!('[', '')
+string.tr!(']', '')
+File.open("output.txt", 'w') do |f|
+  string.split(",").each do |x|
+    f.write "#{x}\n"
+  end
+end
+FileUtils.rm(PROLOG_OUTPUT)
+system('./translator')
+system('../Sextium_III/sextium prog.sextium')
